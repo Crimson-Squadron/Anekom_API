@@ -20,6 +20,13 @@ const db = mysql.createConnection({
   database: 'anekom_db'
 });
 
+const pool = mysql.createPool({
+  host: 'localhost',
+  user: 'root',
+  password: '',
+  database: 'anekom_db'
+});
+
 db.connect((err) => {
   if (err) {
     console.log('Error connecting to database');
@@ -43,10 +50,9 @@ app.get('/materi', (req, res) => {
   });
 });
 
-// GET a specific materi from the database
-app.get('/materi/:id', (req, res) => {
-  const id = req.params.id;
-  const sql = `SELECT * FROM materi WHERE id=${id}`;
+// GET all anekdot from the database
+app.get('/anekdot', (req, res) => {
+  const sql = 'SELECT * FROM anekdot';
   db.query(sql, (err, result) => {
     if (err) {
       throw err;
@@ -55,26 +61,54 @@ app.get('/materi/:id', (req, res) => {
   });
 });
 
-// Update the favorite column of a specific materi in the database
-app.put('/materi/:id', (req, res) => {
+// Update the favorite column of a specific anekdot in the database
+app.put('/anekdot/:id', (req, res) => {
   const id = req.params.id;
-  const favorite = req.body.favorite;
-  const sql = `UPDATE materi SET favorite=${favorite} WHERE id=${id}`;
+  const sql = `UPDATE anekdot SET favorite=NOT favorite WHERE id=${id}`;
   db.query(sql, (err, result) => {
     if (err) {
       throw err;
     }
-    res.send(`Materi with ID ${id} has been favorited`);
+    res.send(`Anekdot text with ID ${id} has been toggled`);
   });
 });
 
+// GET all favorite from the database
 app.get('/favorite', (req, res) => {
-  const sql = 'SELECT * FROM materi WHERE favorite=1';
+  const sql = 'SELECT * FROM anekdot WHERE favorite=1';
   db.query(sql, (err, result) => {
     if (err) {
       throw err;
     }
     res.send(result);
+  });
+});
+
+// get route to retrieve the note
+app.get('/catatan', (req, res) => {
+  pool.query('SELECT * FROM catatan WHERE id=1', (error, results) => {
+    if (error) {
+      console.log(error);
+      res.status(500).send(error);
+    } else {
+      res.send(results);
+    }
+  });
+});
+
+// put route to update the note
+app.put('/catatan/1', (req, res) => {
+  const { id } = req.params;
+  const { isi_catatan } = req.body;
+  pool.query('UPDATE catatan SET isi_catatan = ? WHERE id = 1', [isi_catatan, id], (error, results) => {
+    if (error) {
+      console.log(error);
+      res.status(500).send(error);
+    } else if (results.affectedRows === 0) {
+      res.status(404).send('Note not found');
+    } else {
+      res.send('Note updated successfully');
+    }
   });
 });
 
